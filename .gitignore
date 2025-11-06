@@ -1,0 +1,43 @@
+# Flutter
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+podfile.lock
+
+# Android
+android/.gradle
+android/gradle-wrapper.jar
+android/local.properties
+android/**/build/
+android/**/proguard/
+android/**/*.apk
+android/**/*.ap_
+android/**/*.jar
+android/**/*.aab
+
+# iOS
+ios/**/Pods/
+ios/**/.symlinks/
+ios/**/profile
+ios/**/xcuserdata
+ios/.generated/
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/ServiceDefinitions.json
+ios/Runner/GeneratedPluginRegistrant.*
+
+# Web
+.webpack/
+
+# Environnements
+.env
+.env.*
+
+# Système
+.DS_Store
+Thumbs.db
