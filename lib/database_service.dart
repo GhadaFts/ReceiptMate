@@ -1,21 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'config.dart';
 
 class DatabaseService {
-  static Future<void> setup() async {
-    await Firebase.initializeApp(
-      options: FirebaseOptions(
-        projectId: Config.projectId,
-        appId: Config.appId,
-        apiKey: Config.apiKey,
-        messagingSenderId: Config.messagingSenderId,
-        storageBucket: Config.storageBucket,
-      ),
-    );
-    print('✅ Firebase connecté avec succès!');
-  }
-
   // ==================== USERS ====================
   static Future<void> createUser(String userId, String email, {String healthTarget = ''}) async {
     final db = FirebaseFirestore.instance;
@@ -25,6 +10,7 @@ class DatabaseService {
       'healthTarget': healthTarget,
       'preferences': [],
       'createdAt': DateTime.now(),
+      'onboardingCompleted': false,
     });
     print('✅ Utilisateur $email créé');
   }
