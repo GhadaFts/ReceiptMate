@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CustomDrawer extends StatelessWidget {
   final String? currentRoute; // ✅ Rendre optionnel
@@ -7,6 +8,55 @@ class CustomDrawer extends StatelessWidget {
     super.key,
     this.currentRoute, // ✅ Plus required
   });
+
+  Future<void> _logout(BuildContext context) async {
+    // Show confirmation dialog
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout != true) return;
+
+    try {
+      // Sign out from Firebase
+      await FirebaseAuth.instance.signOut();
+
+      if (context.mounted) {
+        // Navigate to landing page and remove all previous routes
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/',
+              (route) => false,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error logging out: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -140,6 +190,21 @@ class CustomDrawer extends StatelessWidget {
                 // Navigation vers à propos
               },
             ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Divider(),
+            ),
+            // Logout button
+            _DrawerMenuItem(
+              icon: Icons.logout,
+              title: 'Déconnexion',
+              iconColor: Colors.red.shade400,
+              textColor: Colors.red.shade700,
+              onTap: () {
+                Navigator.pop(context); // Close drawer first
+                _logout(context);
+              },
+            ),
           ],
         ),
       ),
@@ -152,12 +217,16 @@ class _DrawerMenuItem extends StatelessWidget {
   final String title;
   final bool isSelected;
   final VoidCallback onTap;
+  final Color? iconColor;
+  final Color? textColor;
 
   const _DrawerMenuItem({
     required this.icon,
     required this.title,
     this.isSelected = false,
     required this.onTap,
+    this.iconColor,
+    this.textColor,
   });
 
   @override
@@ -165,7 +234,7 @@ class _DrawerMenuItem extends StatelessWidget {
     return ListTile(
       leading: Icon(
         icon,
-        color: isSelected ? const Color(0xFF8BC34A) : Colors.grey.shade700,
+        color: iconColor ?? (isSelected ? const Color(0xFF8BC34A) : Colors.grey.shade700),
         size: 24,
       ),
       title: Text(
@@ -173,7 +242,7 @@ class _DrawerMenuItem extends StatelessWidget {
         style: TextStyle(
           fontSize: 16,
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          color: isSelected ? const Color(0xFF558B2F) : Colors.grey.shade800,
+          color: textColor ?? (isSelected ? const Color(0xFF558B2F) : Colors.grey.shade800),
         ),
       ),
       selected: isSelected,
