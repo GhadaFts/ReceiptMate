@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:math' as math;
 import '../models/recipe.dart';
 import '../models/allergy.dart';
 import '../service/recipe_service.dart';
+import '../service/favorites_service.dart';
 
 class RecipeDetailPage extends StatefulWidget {
   final Recipe recipe;
+  final List<String>? userAllergies;
 
-  const RecipeDetailPage({super.key, required this.recipe});
+  const RecipeDetailPage({
+    super.key,
+    required this.recipe,
+    this.userAllergies,
+  });
 
   @override
   State<RecipeDetailPage> createState() => _RecipeDetailPageState();
@@ -16,11 +23,82 @@ class RecipeDetailPage extends StatefulWidget {
 class _RecipeDetailPageState extends State<RecipeDetailPage> {
   Recipe? detailedRecipe;
   bool isLoading = true;
+  bool _isFavorite = false;
+  bool _isLoadingFavorite = false;
 
   @override
   void initState() {
     super.initState();
+    _checkIfFavorite();
     _loadRecipeDetails();
+  }
+
+  Future<void> _checkIfFavorite() async {
+    if (widget.recipe.id == null) return;
+
+    try {
+      final isFav = await FavoritesService.isFavorite(widget.recipe.id!);
+      if (mounted) {
+        setState(() {
+          _isFavorite = isFav;
+        });
+      }
+    } catch (e) {
+      print('Error checking favorite: $e');
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (widget.recipe.id == null) return;
+
+    if (!FavoritesService.isUserLoggedIn) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Connectez-vous pour ajouter aux favoris'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoadingFavorite = true;
+    });
+
+    try {
+      final recipe = detailedRecipe ?? widget.recipe;
+      final success = await FavoritesService.toggleFavorite(recipe);
+
+      if (mounted) {
+        setState(() {
+          _isFavorite = success;
+          _isLoadingFavorite = false;
+        });
+      }
+
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_isFavorite
+                ? 'Ajouté aux favoris !'
+                : 'Retiré des favoris'),
+            backgroundColor: _isFavorite ? Colors.green : Colors.orange,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingFavorite = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _loadRecipeDetails() async {
@@ -39,16 +117,94 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
     }
   }
 
+  // MÉTHODE CORRIGÉE POUR YOUTUBE
+  Future<void> _launchYouTube(String url) async {
+    try {
+      print('🚀 Tentative de lancement YouTube: $url');
+
+      if (url.isEmpty) {
+        print('❌ URL YouTube vide');
+        _showNoYouTubeDialog();
+        return;
+      }
+
+      final uri = Uri.parse(url);
+
+      if (await canLaunchUrl(uri)) {
+        print('✅ URL YouTube valide, lancement...');
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+        print('✅ YouTube lancé avec succès');
+      } else {
+        print('❌ Impossible de lancer l URL YouTube');
+        _showNoYouTubeDialog();
+      }
+    } catch (e) {
+      print('❌ Erreur lors du lancement YouTube: $e');
+      _showNoYouTubeDialog();
+    }
+  }
+
+  void _showNoYouTubeDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Vidéo non disponible'),
+        content: const Text('Cette recette ne fournit pas de méthode de préparation sur YouTube.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String? _getYouTubeUrl(Recipe recipe) {
+    final youtubeMap = {
+      '52868': 'https://www.youtube.com/watch?v=FS8u1RBdf6I',
+      '52771': 'https://www.youtube.com/watch?v=3A0V-7x7dAw',
+      '52795': 'https://www.youtube.com/watch?v=0n3fPe4fP_s',
+      '52776': 'https://www.youtube.com/watch?v=JxGE0y2fT1A',
+      '52834': 'https://www.youtube.com/watch?v=PQHgSfLP-D4',
+    };
+
+    // Priorité 1: URL hardcodée
+    if (youtubeMap.containsKey(recipe.id)) {
+      return youtubeMap[recipe.id];
+    }
+
+    // Priorité 2: URL formatée
+    final formattedUrl = recipe.formattedYoutubeUrl;
+    if (formattedUrl != null && formattedUrl.isNotEmpty && formattedUrl != 'null') {
+      return formattedUrl;
+    }
+
+    // Priorité 3: URL originale
+    if (recipe.youtubeUrl != null && recipe.youtubeUrl!.isNotEmpty && recipe.youtubeUrl != 'null') {
+      return recipe.youtubeUrl;
+    }
+
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final recipe = detailedRecipe ?? widget.recipe;
+    final youtubeUrl = _getYouTubeUrl(recipe);
+
+    // Debug
+    print('🎬 Recipe: ${recipe.name}');
+    print('🎬 YouTube URL: $youtubeUrl');
 
     return Scaffold(
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : CustomScrollView(
         slivers: [
-          // App Bar avec image
           SliverAppBar(
             expandedHeight: 300,
             pinned: true,
@@ -59,6 +215,12 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                   Image.network(
                     recipe.imageUrl,
                     fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey.shade300,
+                        child: const Icon(Icons.restaurant, size: 100, color: Colors.grey),
+                      );
+                    },
                   ),
                   Container(
                     decoration: BoxDecoration(
@@ -76,38 +238,54 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
               ),
             ),
             actions: [
+              Stack(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      _isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: Colors.white,
+                    ),
+                    onPressed: _isLoadingFavorite ? null : _toggleFavorite,
+                  ),
+                  if (_isLoadingFavorite)
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.transparent,
+                        child: const Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               IconButton(
                 icon: Icon(
-                  recipe.isFavorite
-                      ? Icons.favorite
-                      : Icons.favorite_border,
-                  color: Colors.white,
+                  Icons.play_circle_outline,
+                  color: youtubeUrl != null ? Colors.white : Colors.grey.shade400,
                 ),
                 onPressed: () {
-                  setState(() {
-                    recipe.isFavorite = !recipe.isFavorite;
-                  });
+                  if (youtubeUrl != null) {
+                    _launchYouTube(youtubeUrl);
+                  } else {
+                    _showNoYouTubeDialog();
+                  }
                 },
               ),
-              if (recipe.youtubeUrl != null)
-                IconButton(
-                  icon: const Icon(Icons.play_circle_outline, color: Colors.white),
-                  onPressed: () {
-                    // Ouvrir YouTube (vous pouvez utiliser url_launcher)
-                    print('Open YouTube: ${recipe.youtubeUrl}');
-                  },
-                ),
             ],
           ),
-
-          // Contenu
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Titre
                   Text(
                     recipe.name,
                     style: const TextStyle(
@@ -116,8 +294,6 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-
-                  // Catégorie et origine
                   Row(
                     children: [
                       _InfoBadge(
@@ -136,8 +312,10 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                     ],
                   ),
                   const SizedBox(height: 24),
-
-                  // Calories principale
+                  if (widget.userAllergies != null &&
+                      widget.userAllergies!.isNotEmpty &&
+                      recipe.ingredients != null)
+                    _buildAllergyWarning(recipe),
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -190,29 +368,117 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-
-                  // Distribution nutritionnelle
                   _buildNutritionDistribution(recipe),
                   const SizedBox(height: 24),
-
-                  // Macronutriments
                   _buildMacronutrients(recipe),
                   const SizedBox(height: 24),
-
-                  // Ingrédients
                   if (recipe.ingredients != null &&
                       recipe.ingredients!.isNotEmpty)
                     _buildIngredientsSection(recipe.ingredients!),
-
                   const SizedBox(height: 24),
-
-                  // Instructions
                   if (recipe.instructions != null)
                     _buildInstructionsSection(recipe.instructions!),
                 ],
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  // ... Gardez toutes vos autres méthodes _build... existantes
+  // Elles restent identiques à votre code original
+  Widget _buildAllergyWarning(Recipe recipe) {
+    final ingredientNames = recipe.ingredients!
+        .map((i) => i.name.toLowerCase())
+        .toList();
+
+    final foundAllergens = AllergyData.findAllergensInRecipe(
+      ingredientNames,
+      widget.userAllergies!,
+    );
+
+    if (foundAllergens.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 24),
+        decoration: BoxDecoration(
+          color: Colors.green.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.green.shade200),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green.shade700, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Cette recette ne contient aucun de vos allergènes',
+                style: TextStyle(
+                  color: Colors.green.shade700,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.shade300, width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.warning, color: Colors.red.shade700, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  '⚠️ ATTENTION - Allergènes détectés',
+                  style: TextStyle(
+                    color: Colors.red.shade700,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Cette recette contient:',
+            style: TextStyle(
+              color: Colors.red.shade700,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...foundAllergens.map((allergen) => Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              children: [
+                Icon(Icons.close, color: Colors.red.shade700, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  allergen,
+                  style: TextStyle(
+                    color: Colors.red.shade700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          )),
         ],
       ),
     );
@@ -232,8 +498,6 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
           ),
         ),
         const SizedBox(height: 16),
-
-        // Graphique circulaire
         Center(
           child: SizedBox(
             height: 200,
@@ -248,8 +512,6 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
           ),
         ),
         const SizedBox(height: 20),
-
-        // Légende
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -420,7 +682,6 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
   }
 
   Widget _buildInstructionsSection(String instructions) {
-    // Diviser les instructions en étapes
     final steps = instructions
         .split(RegExp(r'\r\n|\r|\n'))
         .where((s) => s.trim().isNotEmpty)
@@ -501,7 +762,7 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
   }
 }
 
-// Widget pour les badges d'info
+// ... Gardez vos autres classes (_InfoBadge, _LegendItem, etc.)
 class _InfoBadge extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -541,7 +802,6 @@ class _InfoBadge extends StatelessWidget {
   }
 }
 
-// Widget pour les items de légende
 class _LegendItem extends StatelessWidget {
   final Color color;
   final String label;
@@ -592,7 +852,6 @@ class _LegendItem extends StatelessWidget {
   }
 }
 
-// Widget pour les macronutriments
 class _MacroItem extends StatelessWidget {
   final String label;
   final String value;
@@ -633,7 +892,6 @@ class _MacroItem extends StatelessWidget {
   }
 }
 
-// Custom Painter pour le graphique circulaire
 class NutritionPieChart extends CustomPainter {
   final double proteinPercent;
   final double carbsPercent;
@@ -652,7 +910,6 @@ class NutritionPieChart extends CustomPainter {
 
     double startAngle = -math.pi / 2;
 
-    // Protéines (rouge)
     final proteinSweep = (proteinPercent / 100) * 2 * math.pi;
     final proteinPaint = Paint()
       ..color = Colors.red.shade400
@@ -666,7 +923,6 @@ class NutritionPieChart extends CustomPainter {
     );
     startAngle += proteinSweep;
 
-    // Glucides (bleu)
     final carbsSweep = (carbsPercent / 100) * 2 * math.pi;
     final carbsPaint = Paint()
       ..color = Colors.blue.shade400
@@ -680,7 +936,6 @@ class NutritionPieChart extends CustomPainter {
     );
     startAngle += carbsSweep;
 
-    // Lipides (orange)
     final fatSweep = (fatPercent / 100) * 2 * math.pi;
     final fatPaint = Paint()
       ..color = Colors.orange.shade400
@@ -693,7 +948,6 @@ class NutritionPieChart extends CustomPainter {
       fatPaint,
     );
 
-    // Cercle blanc au centre
     final centerCirclePaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;

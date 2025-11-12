@@ -89,6 +89,33 @@ class Recipe {
     );
   }
 
+  // NOUVELLE MÉTHODE AJOUTÉE - Formate l'URL YouTube
+  String? get formattedYoutubeUrl {
+    if (youtubeUrl == null || youtubeUrl!.isEmpty) return null;
+
+    String url = youtubeUrl!;
+
+    // Debug: affiche l'URL YouTube originale
+    print('YouTube URL original: $url');
+
+    // Si c'est juste l'ID de la vidéo (sans l'URL complète)
+    if (!url.contains('youtube.com') && !url.contains('youtu.be')) {
+      return 'https://www.youtube.com/watch?v=$url';
+    }
+
+    // Si c'est une URL complète mais mal formatée
+    if (url.startsWith('www.')) {
+      return 'https://$url';
+    }
+
+    // Si l'URL contient 'watch?v=' mais pas 'https://'
+    if (url.contains('watch?v=') && !url.startsWith('http')) {
+      return 'https://$url';
+    }
+
+    return url;
+  }
+
   // Estimation des calories basée sur la catégorie et le nombre d'ingrédients
   static int _estimateCalories(List<Ingredient> ingredients, String? category) {
     int baseCalories = 0;
@@ -214,7 +241,47 @@ class Recipe {
       'isFavorite': isFavorite,
       'area': area,
       'tags': tags,
+      'youtubeUrl': youtubeUrl,
+      'sourceUrl': sourceUrl,
+      'instructions': instructions,
+      'ingredients': ingredients?.map((i) => {
+        'id': i.id,
+        'name': i.name,
+        'measure': i.measure,
+        'imageUrl': i.imageUrl,
+      }).toList(),
     };
+  }
+
+  // Constructeur depuis JSON local
+  factory Recipe.fromJson(Map<String, dynamic> json) {
+    List<Ingredient>? ingredients;
+    if (json['ingredients'] != null) {
+      ingredients = (json['ingredients'] as List)
+          .map((i) => Ingredient(
+        id: i['id'] as int,
+        name: i['name'] as String,
+        measure: i['measure'] as String,
+        imageUrl: i['imageUrl'] as String,
+      ))
+          .toList();
+    }
+
+    return Recipe(
+      id: json['id'].toString(),
+      name: json['name'] as String,
+      description: json['description'] as String,
+      calories: json['calories'] as int,
+      imageUrl: json['imageUrl'] as String,
+      category: json['category'] as String,
+      isFavorite: json['isFavorite'] as bool? ?? false,
+      area: json['area'] as String?,
+      tags: json['tags'] as String?,
+      youtubeUrl: json['youtubeUrl'] as String?,
+      sourceUrl: json['sourceUrl'] as String?,
+      instructions: json['instructions'] as String?,
+      ingredients: ingredients,
+    );
   }
 }
 
@@ -233,4 +300,12 @@ class Ingredient {
   });
 
   String get displayText => measure.isNotEmpty ? '$measure $name' : name;
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'measure': measure,
+      'imageUrl': imageUrl,
+    };
+  }
 }

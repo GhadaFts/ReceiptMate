@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 
 class CustomDrawer extends StatelessWidget {
-  const CustomDrawer({super.key});
+  final String? currentRoute; // ✅ Rendre optionnel
+
+  const CustomDrawer({
+    super.key,
+    this.currentRoute, // ✅ Plus required
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -66,33 +71,43 @@ class CustomDrawer extends StatelessWidget {
             _DrawerMenuItem(
               icon: Icons.home_outlined,
               title: 'Accueil',
-              isSelected: true,
+              isSelected: currentRoute == '/home', // ✅ Utilise currentRoute si fourni
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(context); // Fermer le drawer
+                if (currentRoute != '/home') {
+                  Navigator.pushReplacementNamed(context, '/home');
+                }
               },
             ),
             _DrawerMenuItem(
               icon: Icons.restaurant_menu_outlined,
               title: 'Mes Recettes',
+              isSelected: currentRoute == '/mes-recettes',
               onTap: () {
                 Navigator.pop(context);
                 // Navigation vers la page des recettes
+                // Navigator.pushNamed(context, '/mes-recettes');
               },
             ),
             _DrawerMenuItem(
               icon: Icons.favorite_outline,
               title: 'Favoris',
+              isSelected: currentRoute == '/favoris',
               onTap: () {
                 Navigator.pop(context);
-                // Navigation vers la page des favoris
+                if (currentRoute != '/favoris') {
+                  Navigator.pushReplacementNamed(context, '/favoris');
+                }
               },
             ),
             _DrawerMenuItem(
               icon: Icons.person_outline,
               title: 'Profil',
+              isSelected: currentRoute == '/profil',
               onTap: () {
                 Navigator.pop(context);
                 // Navigation vers la page profil
+                // Navigator.pushNamed(context, '/profil');
               },
             ),
             const Padding(
@@ -102,9 +117,11 @@ class CustomDrawer extends StatelessWidget {
             _DrawerMenuItem(
               icon: Icons.settings_outlined,
               title: 'Paramètres',
+              isSelected: currentRoute == '/parametres',
               onTap: () {
                 Navigator.pop(context);
                 // Navigation vers les paramètres
+                // Navigator.pushNamed(context, '/parametres');
               },
             ),
             _DrawerMenuItem(
