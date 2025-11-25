@@ -6,6 +6,7 @@ import 'pages/signup_page.dart';
 import 'pages/onboarding_page.dart';
 import 'pages/home_page.dart';
 import 'pages/favorites_page.dart';
+import 'pages/pantry_page.dart';
 
 import 'config.dart';
 
@@ -58,6 +59,7 @@ class MyApp extends StatelessWidget {
         '/onboarding': (context) => const OnboardingPage(),
         '/home': (context) => const HomePage(),
         '/favoris' :(context) => const FavoritesPage(),
+        '/pantry': (context) => const PantryPage(),
       },
     );
   }
