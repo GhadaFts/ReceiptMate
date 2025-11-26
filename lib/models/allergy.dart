@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-// Modèle pour les allergies
 class Allergy {
   final String id;
   final String name;

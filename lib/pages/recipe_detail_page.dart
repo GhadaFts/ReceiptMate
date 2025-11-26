@@ -120,10 +120,10 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
   // MÉTHODE CORRIGÉE POUR YOUTUBE
   Future<void> _launchYouTube(String url) async {
     try {
-      print('🚀 Tentative de lancement YouTube: $url');
+      print('Tentative de lancement YouTube: $url');
 
       if (url.isEmpty) {
-        print('❌ URL YouTube vide');
+        print(' URL YouTube vide');
         _showNoYouTubeDialog();
         return;
       }

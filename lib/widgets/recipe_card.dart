@@ -335,7 +335,7 @@ class _RecipeCardHorizontalState extends State<RecipeCardHorizontal> {
         );
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 100),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
