@@ -2,24 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class CustomDrawer extends StatelessWidget {
-  final String? currentRoute; // ✅ Rendre optionnel
+  final String? currentRoute;
 
   const CustomDrawer({
     super.key,
-    this.currentRoute, // ✅ Plus required
+    this.currentRoute,
   });
 
   Future<void> _logout(BuildContext context) async {
-    // Show confirmation dialog
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        title: const Text('Déconnexion'),
+        content: const Text('Êtes-vous sûr de vouloir vous déconnecter ?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const Text('Annuler'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -27,7 +26,7 @@ class CustomDrawer extends StatelessWidget {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Logout'),
+            child: const Text('Déconnexion'),
           ),
         ],
       ),
@@ -36,11 +35,9 @@ class CustomDrawer extends StatelessWidget {
     if (shouldLogout != true) return;
 
     try {
-      // Sign out from Firebase
       await FirebaseAuth.instance.signOut();
 
       if (context.mounted) {
-        // Navigate to landing page and remove all previous routes
         Navigator.of(context).pushNamedAndRemoveUntil(
           '/',
               (route) => false,
@@ -50,7 +47,7 @@ class CustomDrawer extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error logging out: ${e.toString()}'),
+            content: Text('Erreur lors de la déconnexion: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -66,7 +63,7 @@ class CustomDrawer extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            // Header du drawer avec image et nom
+            // Header du drawer
             DrawerHeader(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -83,8 +80,8 @@ class CustomDrawer extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Container(
-                    width: 70,
-                    height: 70,
+                    width: 30,
+                    height: 30,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
@@ -99,7 +96,7 @@ class CustomDrawer extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   const Text(
-                    'Healthy Salads',
+                    'Receipe Mate',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 22,
@@ -117,28 +114,33 @@ class CustomDrawer extends StatelessWidget {
                 ],
               ),
             ),
+
             // Menu items
             _DrawerMenuItem(
               icon: Icons.home_outlined,
               title: 'Accueil',
-              isSelected: currentRoute == '/home', // ✅ Utilise currentRoute si fourni
+              isSelected: currentRoute == '/home',
               onTap: () {
-                Navigator.pop(context); // Fermer le drawer
+                Navigator.pop(context);
                 if (currentRoute != '/home') {
                   Navigator.pushReplacementNamed(context, '/home');
                 }
               },
             ),
+
+            // ✅ PANTRY AJOUTÉ
             _DrawerMenuItem(
-              icon: Icons.restaurant_menu_outlined,
-              title: 'Mes Recettes',
-              isSelected: currentRoute == '/mes-recettes',
+              icon: Icons.kitchen_outlined,
+              title: 'Pantry',
+              isSelected: currentRoute == '/pantry',
               onTap: () {
                 Navigator.pop(context);
-                // Navigation vers la page des recettes
-                // Navigator.pushNamed(context, '/mes-recettes');
+                if (currentRoute != '/pantry') {
+                  Navigator.pushReplacementNamed(context, '/pantry');
+                }
               },
             ),
+
             _DrawerMenuItem(
               icon: Icons.favorite_outline,
               title: 'Favoris',
@@ -150,6 +152,17 @@ class CustomDrawer extends StatelessWidget {
                 }
               },
             ),
+
+            _DrawerMenuItem(
+              icon: Icons.restaurant_menu_outlined,
+              title: 'Mes Recettes',
+              isSelected: currentRoute == '/mes-recettes',
+              onTap: () {
+                Navigator.pop(context);
+                // Navigation vers la page des recettes
+              },
+            ),
+
             _DrawerMenuItem(
               icon: Icons.person_outline,
               title: 'Profil',
@@ -157,13 +170,14 @@ class CustomDrawer extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 // Navigation vers la page profil
-                // Navigator.pushNamed(context, '/profil');
               },
             ),
+
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Divider(),
             ),
+
             _DrawerMenuItem(
               icon: Icons.settings_outlined,
               title: 'Paramètres',
@@ -171,29 +185,30 @@ class CustomDrawer extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 // Navigation vers les paramètres
-                // Navigator.pushNamed(context, '/parametres');
               },
             ),
+
             _DrawerMenuItem(
               icon: Icons.help_outline,
               title: 'Aide',
               onTap: () {
                 Navigator.pop(context);
-                // Navigation vers l'aide
               },
             ),
+
             _DrawerMenuItem(
               icon: Icons.info_outline,
               title: 'À propos',
               onTap: () {
                 Navigator.pop(context);
-                // Navigation vers à propos
               },
             ),
+
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Divider(),
             ),
+
             // Logout button
             _DrawerMenuItem(
               icon: Icons.logout,
@@ -201,7 +216,7 @@ class CustomDrawer extends StatelessWidget {
               iconColor: Colors.red.shade400,
               textColor: Colors.red.shade700,
               onTap: () {
-                Navigator.pop(context); // Close drawer first
+                Navigator.pop(context);
                 _logout(context);
               },
             ),

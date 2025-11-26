@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:projet_flutter/pages/SmartHomePage.dart';
 import 'auth_wrapper.dart';
 import 'pages/login_page.dart';
 import 'pages/signup_page.dart';
 import 'pages/onboarding_page.dart';
 import 'pages/home_page.dart';
 import 'pages/favorites_page.dart';
+import 'pages/pantry_page.dart';
 
 import 'config.dart';
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +24,6 @@ void main() async {
       storageBucket: Config.storageBucket,
     ),
   );
-
   runApp(const MyApp());
 }
 
@@ -58,6 +58,8 @@ class MyApp extends StatelessWidget {
         '/onboarding': (context) => const OnboardingPage(),
         '/home': (context) => const HomePage(),
         '/favoris' :(context) => const FavoritesPage(),
+        '/pantry': (context) => const PantryPage(),
+        '/smartHome':(context)=> const SmartHomePage(),
       },
     );
   }

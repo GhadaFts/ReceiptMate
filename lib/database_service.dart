@@ -44,7 +44,7 @@ class DatabaseService {
       'userId': userId,
       'ingredient': ingredient,
       'quantity': quantity,
-      'addedAt': DateTime.now(),
+      'addedAt': FieldValue.serverTimestamp(),
     });
     print('✅ Ingredient $ingredient ajouté au pantry');
   }
@@ -58,7 +58,6 @@ class DatabaseService {
     final db = FirebaseFirestore.instance;
     return db.collection('pantry')
         .where('userId', isEqualTo: userId)
-        .orderBy('addedAt', descending: true)
         .snapshots();
   }
 
