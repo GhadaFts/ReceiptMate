@@ -6,17 +6,11 @@ class Recipe {
   final String imageUrl;
   final String category;
   bool isFavorite;
-
-  // Informations TheMealDB
   final String? area;
   final String? tags;
   final String? youtubeUrl;
   final String? sourceUrl;
-
-  // Ingrédients
   final List<Ingredient>? ingredients;
-
-  // Instructions
   final String? instructions;
 
   Recipe({
@@ -35,9 +29,7 @@ class Recipe {
     this.instructions,
   });
 
-  // Constructeur depuis TheMealDB API
   factory Recipe.fromMealDBJson(Map<String, dynamic> json) {
-    // Extraction des ingrédients (TheMealDB a jusqu'à 20 ingrédients)
     List<Ingredient> ingredients = [];
     for (int i = 1; i <= 20; i++) {
       final ingredientName = json['strIngredient$i'];
@@ -89,13 +81,11 @@ class Recipe {
     );
   }
 
-  // NOUVELLE MÉTHODE AJOUTÉE - Formate l'URL YouTube
   String? get formattedYoutubeUrl {
     if (youtubeUrl == null || youtubeUrl!.isEmpty) return null;
 
     String url = youtubeUrl!;
 
-    // Debug: affiche l'URL YouTube originale
     print('YouTube URL original: $url');
 
     // Si c'est juste l'ID de la vidéo (sans l'URL complète)
