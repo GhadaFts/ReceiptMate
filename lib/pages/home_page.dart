@@ -36,6 +36,7 @@ class _HomePageState extends State<HomePage> {
   Map<String, dynamic>? userData;
   List<Map<String, dynamic>> pantryItems = [];
 
+  //Loading User Data
   @override
   void initState() {
     super.initState();
@@ -45,10 +46,10 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadUserData() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    if (user == null) return;// Not logged in
 
     try {
-      // Load user profile
+      // Step 1: Load user profile from Firestore
       final userDoc = await DatabaseService.getUser(user.uid);
       if (userDoc.exists) {
         setState(() {
@@ -56,7 +57,7 @@ class _HomePageState extends State<HomePage> {
         });
       }
 
-      // Load pantry items
+      // Step 2: Load pantry items from Firestore
       final pantrySnapshot = await FirebaseFirestore.instance
           .collection('pantry')
           .where('userId', isEqualTo: user.uid)
@@ -136,6 +137,7 @@ class _HomePageState extends State<HomePage> {
     ]);
   }
 
+  //Loading Regular Recipes
   Future<void> _loadCategoryRecipes() async {
     setState(() {
       isLoadingCategory = true;
@@ -143,6 +145,7 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
+      // Fetch recipes from TheMealDB API
       final recipes = await RecipeService.searchByCategory(selectedCategory);
       setState(() {
         categoryRecipes = recipes;
@@ -162,7 +165,9 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // Getting AI Recommendations
   Future<void> _loadAIRecommendations() async {
+    // Need user data and recipes first
     if (userData == null || categoryRecipes.isEmpty) return;
 
     setState(() {
@@ -171,6 +176,7 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
+      // Call Gemini service
       final recommendations = await GeminiService.getRecipeRecommendations(
         userData: userData!,
         pantryItems: pantryItems,
@@ -216,7 +222,7 @@ class _HomePageState extends State<HomePage> {
     });
     _loadCategoryRecipes();
   }
-
+  // AI Toggle Button
   void _toggleAI() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -242,7 +248,7 @@ class _HomePageState extends State<HomePage> {
       }
     }
   }
-
+  // Building the UI
   @override
   Widget build(BuildContext context) {
     return Scaffold(

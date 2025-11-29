@@ -8,6 +8,7 @@ import 'pages/onboarding_page.dart';
 import 'pages/home_page.dart';
 import 'pages/favorites_page.dart';
 import 'pages/pantry_page.dart';
+import 'pages/profile_page.dart'; // ✅ AJOUTÉ
 
 import 'config.dart';
 
@@ -57,9 +58,10 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => const SignUpPage(),
         '/onboarding': (context) => const OnboardingPage(),
         '/home': (context) => const HomePage(),
-        '/favoris' :(context) => const FavoritesPage(),
+        '/favoris': (context) => const FavoritesPage(),
         '/pantry': (context) => const PantryPage(),
-        '/smartHome':(context)=> const SmartHomePage(),
+        '/smartHome': (context) => const SmartHomePage(),
+        '/profil': (context) => const ProfilePage(), // ✅ AJOUTÉ
       },
     );
   }

@@ -7,12 +7,14 @@ import '../models/recipe.dart';
 
 class GeminiService {
   static const String apiKey = GeminiConfig.apiKey;
-  // UPDATED: Using Gemini 2.5 Flash (the latest available model)
+  // UPDATED: Using Gemini 2.5 Flash
   static const String baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 
   /// Generate recipe recommendations with scores based on user profile and pantry
   static Future<List<RecipeRecommendation>> getRecipeRecommendations({
+    // 3 inputs: user data, pantry items, and recipes
+    // Returns a list of scored recommendations
     required Map<String, dynamic> userData,
     required List<Map<String, dynamic>> pantryItems,
     required List<Recipe> recipes,
@@ -21,6 +23,7 @@ class GeminiService {
     const maxRecipesPerBatch = 4;
 
     if (recipes.length <= maxRecipesPerBatch) {
+      // If we have 4 or fewer recipes, process them all at once
       return _getRecommendationsBatch(userData, pantryItems, recipes);
     }
 
@@ -85,7 +88,7 @@ class GeminiService {
           final usage = data['usageMetadata'];
           print('🔢 Tokens - Input: ${usage['promptTokenCount']}, Output: ${usage['candidatesTokenCount']}, Thinking: ${usage['thoughtsTokenCount'] ?? 0}');
         }
-
+        // Get the AI's text response
         // Check if response has the expected structure
         if (data['candidates'] == null || data['candidates'].isEmpty) {
           print('❌ Error: No candidates in response');
@@ -142,15 +145,19 @@ class GeminiService {
         .map((item) => item['ingredient'])
         .join(',');
 
+    // Formatting recipes for AI
     final recipeList = recipes.map((recipe) {
+      // Get first 6 ingredients (save tokens)
       final ingredientNames = recipe.ingredients
           ?.map((ing) => ing.name)
           .take(6) // Reduced from 8 to 6
           .join(',') ?? 'unknown';
 
+      // Format: ID|Name|Calories|Ingredients
       return '${recipe.id}|${recipe.name}|${recipe.calories}|$ingredientNames';
     }).join('\n');
 
+    // The Actual Prompt
     return '''
 Score these recipes 0-100 for user. Return JSON array only, no markdown.
 
@@ -173,8 +180,9 @@ All ${recipes.length} recipes required.''';
     try {
       // Clean the response - remove markdown code blocks if present
       String cleanedText = responseText.trim();
+      // AI sometimes wraps JSON in ```json ... ```
       if (cleanedText.startsWith('```json')) {
-        cleanedText = cleanedText.substring(7);
+        cleanedText = cleanedText.substring(7);// Remove ```json
       }
       if (cleanedText.startsWith('```')) {
         cleanedText = cleanedText.substring(3);
@@ -185,11 +193,13 @@ All ${recipes.length} recipes required.''';
       cleanedText = cleanedText.trim();
 
       // Parse JSON
+      // Convert string to JSON array
       final List<dynamic> jsonList = jsonDecode(cleanedText);
 
       List<RecipeRecommendation> recommendations = [];
 
       for (var item in jsonList) {
+        // Extract fields
         final recipeId = item['recipeId'].toString();
         final score = (item['score'] as num).toInt();
         final recommendation = item['recommendation'] as String;
@@ -197,9 +207,9 @@ All ${recipes.length} recipes required.''';
         // Find the original recipe
         final recipe = originalRecipes.firstWhere(
               (r) => r.id == recipeId,
-          orElse: () => originalRecipes.first,
+          orElse: () => originalRecipes.first, // Fallback
         );
-
+        // Create recommendation object
         recommendations.add(RecipeRecommendation(
           recipe: recipe,
           score: score,
@@ -211,11 +221,14 @@ All ${recipes.length} recipes required.''';
       recommendations.sort((a, b) => b.score.compareTo(a.score));
 
       return recommendations;
+
+      // Fallback System (Système de repli)
     } catch (e) {
       print('❌ Error parsing Gemini response: $e');
       print('Response text: $responseText');
 
       // Fallback: return recipes with default scores
+      // // If AI fails, use simple fallback scoring
       return originalRecipes.map((recipe) {
         return RecipeRecommendation(
           recipe: recipe,
@@ -256,7 +269,7 @@ All ${recipes.length} recipes required.''';
     return true;
   }
 
-  /// Fallback recommendations when AI fails
+  /// Fallback recommendations strategy when AI fails
   static List<RecipeRecommendation> _getFallbackRecommendations(
       List<Recipe> recipes,
       Map<String, dynamic> userData,

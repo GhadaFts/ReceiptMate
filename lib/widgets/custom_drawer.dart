@@ -162,14 +162,15 @@ class CustomDrawer extends StatelessWidget {
                 // Navigation vers la page des recettes
               },
             ),
-
             _DrawerMenuItem(
               icon: Icons.person_outline,
               title: 'Profil',
               isSelected: currentRoute == '/profil',
               onTap: () {
                 Navigator.pop(context);
-                // Navigation vers la page profil
+                if (currentRoute != '/profil') {
+                  Navigator.pushReplacementNamed(context, '/profil');
+                }
               },
             ),
 

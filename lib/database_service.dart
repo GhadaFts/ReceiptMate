@@ -259,4 +259,101 @@ class DatabaseService {
     final favorites = await getFavorites();
     return favorites.length;
   }
+
+
+  // Mettre à jour le profil utilisateur
+  static Future<void> updateUserProfile(String userId, Map<String, dynamic> data) async {
+    final db = FirebaseFirestore.instance;
+    await db.collection('users').doc(userId).update({
+      ...data,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    print('✅ Profil utilisateur mis à jour');
+  }
+
+// Mettre à jour le nom d'utilisateur
+  static Future<void> updateUsername(String userId, String username) async {
+    final db = FirebaseFirestore.instance;
+    await db.collection('users').doc(userId).update({
+      'username': username,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+// Mettre à jour l'image de profil
+  static Future<void> updateProfileImage(String userId, String imageUrl) async {
+    final db = FirebaseFirestore.instance;
+    await db.collection('users').doc(userId).update({
+      'imageUrl': imageUrl,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+// Mettre à jour les objectifs santé
+  static Future<void> updateHealthGoals(String userId, {
+    String? dietType,
+    String? goal,
+    String? healthTarget,
+    String? experienceLevel,
+  }) async {
+    final db = FirebaseFirestore.instance;
+    final updates = <String, dynamic>{
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    if (dietType != null) updates['dietType'] = dietType;
+    if (goal != null) updates['goal'] = goal;
+    if (healthTarget != null) updates['healthTarget'] = healthTarget;
+    if (experienceLevel != null) updates['experienceLevel'] = experienceLevel;
+
+    await db.collection('users').doc(userId).update(updates);
+  }
+
+// Supprimer le compte utilisateur
+  static Future<void> deleteUserAccount(String userId) async {
+    final db = FirebaseFirestore.instance;
+
+    // Supprimer les données utilisateur
+    await db.collection('users').doc(userId).delete();
+
+    // Supprimer les favoris
+    final favoritesQuery = await db.collection('favorites')
+        .where('userId', isEqualTo: userId)
+        .get();
+    for (var doc in favoritesQuery.docs) {
+      await doc.reference.delete();
+    }
+
+    // Supprimer le pantry
+    final pantryQuery = await db.collection('pantry')
+        .where('userId', isEqualTo: userId)
+        .get();
+    for (var doc in pantryQuery.docs) {
+      await doc.reference.delete();
+    }
+
+    print('✅ Compte utilisateur et données associées supprimés');
+  }
+
+// Obtenir les statistiques de l'utilisateur
+  static Future<Map<String, int>> getUserStats(String userId) async {
+    final db = FirebaseFirestore.instance;
+
+    // Compter les favoris
+    final favoritesCount = await db.collection('favorites')
+        .where('userId', isEqualTo: userId)
+        .get()
+        .then((snapshot) => snapshot.docs.length);
+
+    // Compter les items du pantry
+    final pantryCount = await db.collection('pantry')
+        .where('userId', isEqualTo: userId)
+        .get()
+        .then((snapshot) => snapshot.docs.length);
+
+    return {
+      'favorites': favoritesCount,
+      'pantryItems': pantryCount,
+    };
+  }
 }
