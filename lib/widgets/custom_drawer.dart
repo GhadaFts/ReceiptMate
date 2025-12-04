@@ -235,27 +235,6 @@ class CustomDrawer extends StatelessWidget {
               child: Divider(),
             ),
 
-            _DrawerMenuItem(
-              icon: Icons.help_outline,
-              title: 'Aide',
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-
-            _DrawerMenuItem(
-              icon: Icons.info_outline,
-              title: 'À propos',
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Divider(),
-            ),
-
             // Logout button
             _DrawerMenuItem(
               icon: Icons.logout,

@@ -57,7 +57,6 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignUpPage(),
         '/onboarding': (context) => const OnboardingPage(),
-        '/smartHome': (context) => const SmartHomePage(),
 
         // ✅ NOUVELLE ROUTE PRINCIPALE
         '/main': (context) {
