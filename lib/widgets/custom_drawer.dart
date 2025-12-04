@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CustomDrawer extends StatelessWidget {
   final String? currentRoute;
@@ -57,13 +58,15 @@ class CustomDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Drawer(
       child: Container(
         color: Colors.white,
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            // Header du drawer
+            // Header du drawer avec profil utilisateur
             DrawerHeader(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -75,43 +78,106 @@ class CustomDrawer extends StatelessWidget {
                   ],
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 3),
-                      image: const DecorationImage(
-                        image: NetworkImage(
-                          'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=200',
+              child: StreamBuilder<DocumentSnapshot>(
+                stream: user != null
+                    ? FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user.uid)
+                    .snapshots()
+                    : null,
+                builder: (context, snapshot) {
+                  String username = 'Utilisateur';
+                  String email = user?.email ?? '';
+                  String imageUrl = '';
+
+                  if (snapshot.hasData && snapshot.data!.exists) {
+                    final data = snapshot.data!.data() as Map<String, dynamic>;
+                    username = data['username'] ?? 'Utilisateur';
+                    email = data['email'] ?? user?.email ?? '';
+                    imageUrl = data['imageUrl'] ?? '';
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      // Photo de profil
+                      Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                        fit: BoxFit.cover,
+                        child: ClipOval(
+                          child: imageUrl.isNotEmpty
+                              ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(
+                                Icons.person,
+                                size: 40,
+                                color: Colors.grey.shade400,
+                              );
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                      : null,
+                                  strokeWidth: 2,
+                                  valueColor: const AlwaysStoppedAnimation<Color>(
+                                    Color(0xFF8BC34A),
+                                  ),
+                                ),
+                              );
+                            },
+                          )
+                              : Icon(
+                            Icons.person,
+                            size: 40,
+                            color: Colors.grey.shade400,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Receipe Mate',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Recettes saines et nutritives',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
+                      const SizedBox(height: 12),
+                      // Nom d'utilisateur
+                      Text(
+                        username,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      // Email
+                      Text(
+                        email,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 13,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
 
@@ -128,7 +194,6 @@ class CustomDrawer extends StatelessWidget {
               },
             ),
 
-            // ✅ PANTRY AJOUTÉ
             _DrawerMenuItem(
               icon: Icons.kitchen_outlined,
               title: 'Pantry',
@@ -154,15 +219,6 @@ class CustomDrawer extends StatelessWidget {
             ),
 
             _DrawerMenuItem(
-              icon: Icons.restaurant_menu_outlined,
-              title: 'Mes Recettes',
-              isSelected: currentRoute == '/mes-recettes',
-              onTap: () {
-                Navigator.pop(context);
-                // Navigation vers la page des recettes
-              },
-            ),
-            _DrawerMenuItem(
               icon: Icons.person_outline,
               title: 'Profil',
               isSelected: currentRoute == '/profil',
@@ -177,16 +233,6 @@ class CustomDrawer extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Divider(),
-            ),
-
-            _DrawerMenuItem(
-              icon: Icons.settings_outlined,
-              title: 'Paramètres',
-              isSelected: currentRoute == '/parametres',
-              onTap: () {
-                Navigator.pop(context);
-                // Navigation vers les paramètres
-              },
             ),
 
             _DrawerMenuItem(
