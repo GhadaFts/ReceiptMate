@@ -4,12 +4,10 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 class ImgBBService {
-  // 🔑 REMPLACEZ avec votre clé API ImgBB
   static const String _apiKey = '491ead3a6e44b92984e543cec71a8adf';
   static const String _uploadUrl = 'https://api.imgbb.com/1/upload';
 
   /// Upload une image vers ImgBB et retourne l'URL de l'image
-  /// Fonctionne sur Web, Android et iOS
   static Future<String?> uploadImage(XFile imageFile) async {
     try {
       print('📤 Début de l\'upload vers ImgBB...');

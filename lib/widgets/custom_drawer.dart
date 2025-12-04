@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CustomDrawer extends StatelessWidget {
   final String? currentRoute;
@@ -60,12 +61,15 @@ class CustomDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
 
+    final user = FirebaseAuth.instance.currentUser;
+
     return Drawer(
       child: Container(
         color: Colors.white,
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
+            // Header du drawer avec profil utilisateur
             // Header du drawer avec profil utilisateur
             DrawerHeader(
               decoration: BoxDecoration(
@@ -78,6 +82,106 @@ class CustomDrawer extends StatelessWidget {
                   ],
                 ),
               ),
+              child: StreamBuilder<DocumentSnapshot>(
+                stream: user != null
+                    ? FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user.uid)
+                    .snapshots()
+                    : null,
+                builder: (context, snapshot) {
+                  String username = 'Utilisateur';
+                  String email = user?.email ?? '';
+                  String imageUrl = '';
+
+                  if (snapshot.hasData && snapshot.data!.exists) {
+                    final data = snapshot.data!.data() as Map<String, dynamic>;
+                    username = data['username'] ?? 'Utilisateur';
+                    email = data['email'] ?? user?.email ?? '';
+                    imageUrl = data['imageUrl'] ?? '';
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      // Photo de profil
+                      Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: ClipOval(
+                          child: imageUrl.isNotEmpty
+                              ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(
+                                Icons.person,
+                                size: 40,
+                                color: Colors.grey.shade400,
+                              );
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                      : null,
+                                  strokeWidth: 2,
+                                  valueColor: const AlwaysStoppedAnimation<Color>(
+                                    Color(0xFF8BC34A),
+                                  ),
+                                ),
+                              );
+                            },
+                          )
+                              : Icon(
+                            Icons.person,
+                            size: 40,
+                            color: Colors.grey.shade400,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // Nom d'utilisateur
+                      Text(
+                        username,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      // Email
+                      Text(
+                        email,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 13,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  );
+                },
               child: StreamBuilder<DocumentSnapshot>(
                 stream: user != null
                     ? FirebaseFirestore.instance
@@ -233,6 +337,16 @@ class CustomDrawer extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Divider(),
+            ),
+
+            _DrawerMenuItem(
+              icon: Icons.settings_outlined,
+              title: 'Paramètres',
+              isSelected: currentRoute == '/parametres',
+              onTap: () {
+                Navigator.pop(context);
+                // Navigation vers les paramètres
+              },
             ),
 
             _DrawerMenuItem(
