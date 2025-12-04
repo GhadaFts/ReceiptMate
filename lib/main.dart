@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:projet_flutter/pages/SmartHomePage.dart';
 import 'auth_wrapper.dart';
 import 'pages/login_page.dart';
 import 'pages/signup_page.dart';
@@ -60,7 +59,6 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomePage(),
         '/favoris': (context) => const FavoritesPage(),
         '/pantry': (context) => const PantryPage(),
-        '/smartHome': (context) => const SmartHomePage(),
         '/profil': (context) => const ProfilePage(), // ✅ AJOUTÉ
       },
     );
