@@ -699,23 +699,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                   ],
-
-                  const SizedBox(height: 32),
-                  const Divider(),
-                  const SizedBox(height: 16),
-
-                  OutlinedButton.icon(
-                    onPressed: _deleteAccount,
-                    icon: const Icon(Icons.delete_forever),
-                    label: const Text('Delete my account'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red, width: 2),
-                      minimumSize: const Size(double.infinity, 48),
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
                 ],
               ),
             ),
