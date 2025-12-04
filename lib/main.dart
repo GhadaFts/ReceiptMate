@@ -8,7 +8,8 @@ import 'pages/onboarding_page.dart';
 import 'pages/home_page.dart';
 import 'pages/favorites_page.dart';
 import 'pages/pantry_page.dart';
-import 'pages/profile_page.dart'; // ✅ AJOUTÉ
+import 'pages/profile_page.dart'; //
+import 'pages/main_navigation_page.dart';
 
 import 'config.dart';
 
@@ -57,11 +58,21 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignUpPage(),
         '/onboarding': (context) => const OnboardingPage(),
-        '/home': (context) => const HomePage(),
-        '/favoris': (context) => const FavoritesPage(),
-        '/pantry': (context) => const PantryPage(),
         '/smartHome': (context) => const SmartHomePage(),
-        '/profil': (context) => const ProfilePage(), // ✅ AJOUTÉ
+
+        // ✅ NOUVELLE ROUTE PRINCIPALE
+        '/main': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments;
+          return MainNavigationPage(
+            initialIndex: args is int ? args : 0,
+          );
+        },
+
+        // Routes individuelles (compatibilité)
+        '/home': (context) => const MainNavigationPage(initialIndex: 0),
+        '/pantry': (context) => const MainNavigationPage(initialIndex: 1),
+        '/favoris': (context) => const MainNavigationPage(initialIndex: 2),
+        '/profil': (context) => const MainNavigationPage(initialIndex: 3),
       },
     );
   }
