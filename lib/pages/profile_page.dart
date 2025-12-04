@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
 import '../widgets/custom_drawer.dart';
+import '../service/imgbb_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -16,20 +19,23 @@ class _ProfilePageState extends State<ProfilePage> {
 
   bool _isLoading = true;
   bool _isEditing = false;
+  bool _isUploadingImage = false;
 
   // Controllers for editing
   final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _imageUrlController = TextEditingController();
-  final TextEditingController _healthTargetController = TextEditingController();
+
+  // Image picker
+  XFile? _imageFile;
+  Uint8List? _imageBytes;
+  final ImagePicker _picker = ImagePicker();
 
   // Profile data
   String _username = '';
   String _email = '';
   String _imageUrl = '';
-  String? _dietType;  // ✅ Changed to nullable
-  String? _goal;      // ✅ Changed to nullable
-  String _healthTarget = '';
-  String? _experienceLevel;  // ✅ Changed to nullable
+  String? _dietType;
+  String? _goal;
+  String? _experienceLevel;
   List<String> _allergies = [];
   final List<String> _newAllergies = [];
 
@@ -81,8 +87,6 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void dispose() {
     _usernameController.dispose();
-    _imageUrlController.dispose();
-    _healthTargetController.dispose();
     super.dispose();
   }
 
@@ -105,7 +109,6 @@ class _ProfilePageState extends State<ProfilePage> {
           _email = user.email ?? data['email'] ?? '';
           _imageUrl = data['imageUrl'] ?? '';
 
-          // ✅ CORRECTION: Clean invalid values
           final dietTypeRaw = data['dietType'] ?? '';
           _dietType = (dietTypeRaw.isEmpty ||
               dietTypeRaw == 'Not specified' ||
@@ -118,8 +121,6 @@ class _ProfilePageState extends State<ProfilePage> {
               goalRaw == 'No Restrictions' ||
               !_goals.contains(goalRaw)) ? null : goalRaw;
 
-          _healthTarget = data['healthTarget'] ?? '';
-
           final experienceRaw = data['experienceLevel'] ?? '';
           _experienceLevel = (experienceRaw.isEmpty ||
               experienceRaw == 'Not specified' ||
@@ -129,8 +130,6 @@ class _ProfilePageState extends State<ProfilePage> {
           _allergies = List<String>.from(data['allergies'] ?? []);
 
           _usernameController.text = _username;
-          _imageUrlController.text = _imageUrl;
-          _healthTargetController.text = _healthTarget;
         });
       }
     } catch (e) {
@@ -140,30 +139,100 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        final bytes = await pickedFile.readAsBytes();
+
+        setState(() {
+          _imageFile = pickedFile;
+          _imageBytes = bytes;
+        });
+
+        _showSnackBar('✅ Image selected: ${pickedFile.name}');
+      }
+    } catch (e) {
+      _showSnackBar('Error selecting image: $e', isError: true);
+    }
+  }
+
+  Future<String?> _uploadImage() async {
+    if (_imageFile == null) return null;
+
+    if (!ImgBBService.isConfigured()) {
+      _showSnackBar('ImgBB API key not configured', isError: true);
+      return null;
+    }
+
+    try {
+      setState(() => _isUploadingImage = true);
+
+      final imageUrl = await ImgBBService.uploadImage(_imageFile!);
+
+      if (imageUrl != null) {
+        _showSnackBar('✅ Image uploaded successfully');
+        return imageUrl;
+      } else {
+        _showSnackBar('Failed to upload image', isError: true);
+        return null;
+      }
+    } catch (e) {
+      _showSnackBar('Error uploading image: $e', isError: true);
+      return null;
+    } finally {
+      setState(() => _isUploadingImage = false);
+    }
+  }
+
   Future<void> _updateProfile() async {
     try {
       final user = _auth.currentUser;
       if (user == null) return;
 
+      // Upload new image if selected
+      String? newImageUrl;
+      if (_imageFile != null) {
+        newImageUrl = await _uploadImage();
+        if (newImageUrl == null) {
+          _showSnackBar('Profile update cancelled: image upload failed', isError: true);
+          return;
+        }
+      }
+
       final allAllergies = [..._allergies, ..._newAllergies];
 
       await _firestore.collection('users').doc(user.uid).update({
         'username': _usernameController.text.trim(),
-        'imageUrl': _imageUrlController.text.trim(),
-        'dietType': _dietType ?? '',  // ✅ Save empty string if null
+        'imageUrl': newImageUrl ?? _imageUrl,
+        'dietType': _dietType ?? '',
         'goal': _goal ?? '',
-        'healthTarget': _healthTargetController.text.trim(),
         'experienceLevel': _experienceLevel ?? '',
         'allergies': allAllergies,
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
+      // Update Firebase Auth profile
+      await user.updateDisplayName(_usernameController.text.trim());
+      if (newImageUrl != null) {
+        await user.updatePhotoURL(newImageUrl);
+      }
+
       setState(() {
         _username = _usernameController.text.trim();
-        _imageUrl = _imageUrlController.text.trim();
-        _healthTarget = _healthTargetController.text.trim();
+        if (newImageUrl != null) {
+          _imageUrl = newImageUrl;
+        }
         _allergies = allAllergies;
         _newAllergies.clear();
+        _imageFile = null;
+        _imageBytes = null;
         _isEditing = false;
       });
 
@@ -330,8 +399,14 @@ class _ProfilePageState extends State<ProfilePage> {
         actions: [
           if (_isEditing)
             IconButton(
-              icon: const Icon(Icons.save, color: Color(0xFF8BC34A)),
-              onPressed: _updateProfile,
+              icon: _isUploadingImage
+                  ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              )
+                  : const Icon(Icons.save, color: Color(0xFF8BC34A)),
+              onPressed: _isUploadingImage ? null : _updateProfile,
               tooltip: 'Save',
             ),
           IconButton(
@@ -340,9 +415,9 @@ class _ProfilePageState extends State<ProfilePage> {
               setState(() {
                 if (_isEditing) {
                   _usernameController.text = _username;
-                  _imageUrlController.text = _imageUrl;
-                  _healthTargetController.text = _healthTarget;
                   _newAllergies.clear();
+                  _imageFile = null;
+                  _imageBytes = null;
                 }
                 _isEditing = !_isEditing;
               });
@@ -376,10 +451,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       CircleAvatar(
                         radius: 60,
                         backgroundColor: Colors.white,
-                        backgroundImage: _imageUrl.isNotEmpty
-                            ? NetworkImage(_imageUrl)
-                            : null,
-                        child: _imageUrl.isEmpty
+                        backgroundImage: _imageBytes != null
+                            ? MemoryImage(_imageBytes!)
+                            : (_imageUrl.isNotEmpty ? NetworkImage(_imageUrl) : null) as ImageProvider?,
+                        child: (_imageBytes == null && _imageUrl.isEmpty)
                             ? const Icon(Icons.person, size: 60, color: Colors.grey)
                             : null,
                       ),
@@ -387,22 +462,25 @@ class _ProfilePageState extends State<ProfilePage> {
                         Positioned(
                           bottom: 0,
                           right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 4,
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                                Icons.camera_alt,
-                                color: Color(0xFF8BC34A),
-                                size: 20
+                          child: GestureDetector(
+                            onTap: _pickImage,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                  Icons.camera_alt,
+                                  color: Color(0xFF8BC34A),
+                                  size: 20
+                              ),
                             ),
                           ),
                         ),
@@ -425,6 +503,24 @@ class _ProfilePageState extends State<ProfilePage> {
                       color: Colors.white.withOpacity(0.9),
                     ),
                   ),
+                  if (_isEditing && _imageFile != null) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'New image selected',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.9),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 24),
                 ],
               ),
@@ -454,28 +550,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       fillColor: _isEditing ? Colors.white : Colors.grey.shade100,
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  TextField(
-                    controller: _imageUrlController,
-                    enabled: _isEditing,
-                    decoration: InputDecoration(
-                      labelText: 'Image URL',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      prefixIcon: const Icon(Icons.image),
-                      filled: true,
-                      fillColor: _isEditing ? Colors.white : Colors.grey.shade100,
-                      helperText: _isEditing ? 'Paste your photo link' : null,
-                    ),
-                  ),
                   const SizedBox(height: 24),
 
                   _buildSectionTitle('Nutritional Goals', Icons.restaurant_menu),
                   const SizedBox(height: 12),
 
-                  // Diet type - FIXED ✅
+                  // Diet type
                   InputDecorator(
                     decoration: InputDecoration(
                       labelText: 'Diet type',
@@ -489,7 +569,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: _isEditing
                         ? DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
-                        value: _dietType,  // ✅ Now nullable
+                        value: _dietType,
                         isExpanded: true,
                         hint: const Text('Not specified'),
                         items: _dietTypes.map((diet) =>
@@ -507,7 +587,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Goal - FIXED ✅
+                  // Goal
                   InputDecorator(
                     decoration: InputDecoration(
                       labelText: 'Goal',
@@ -521,7 +601,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: _isEditing
                         ? DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
-                        value: _goal,  // ✅ Now nullable
+                        value: _goal,
                         isExpanded: true,
                         hint: const Text('Not specified'),
                         items: _goals.map((goal) =>
@@ -539,23 +619,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 16),
 
-                  TextField(
-                    controller: _healthTargetController,
-                    enabled: _isEditing,
-                    decoration: InputDecoration(
-                      labelText: 'Health target',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      prefixIcon: const Icon(Icons.favorite),
-                      filled: true,
-                      fillColor: _isEditing ? Colors.white : Colors.grey.shade100,
-                      helperText: _isEditing ? 'E.g.: Lower cholesterol' : null,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Experience level - FIXED ✅
+                  // Experience level
                   InputDecorator(
                     decoration: InputDecoration(
                       labelText: 'Experience level',
@@ -569,7 +633,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: _isEditing
                         ? DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
-                        value: _experienceLevel,  // ✅ Now nullable
+                        value: _experienceLevel,
                         isExpanded: true,
                         hint: const Text('Not specified'),
                         items: _experienceLevels.map((level) =>
