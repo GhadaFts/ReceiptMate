@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CustomDrawer extends StatelessWidget {
   final String? currentRoute;
@@ -15,12 +14,12 @@ class CustomDrawer extends StatelessWidget {
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Déconnexion'),
-        content: const Text('Êtes-vous sûr de vouloir vous déconnecter ?'),
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to log out?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -28,7 +27,7 @@ class CustomDrawer extends StatelessWidget {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Déconnexion'),
+            child: const Text('Logout'),
           ),
         ],
       ),
@@ -49,7 +48,7 @@ class CustomDrawer extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors de la déconnexion: ${e.toString()}'),
+            content: Text('Logout error: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -61,17 +60,14 @@ class CustomDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
 
-    final user = FirebaseAuth.instance.currentUser;
-
     return Drawer(
       child: Container(
         color: Colors.white,
-        child: ListView(
-          padding: EdgeInsets.zero,
+        child: Column(
           children: [
-            // Header du drawer avec profil utilisateur
-            // Header du drawer avec profil utilisateur
-            DrawerHeader(
+            // Header du drawer avec logo et app name
+            Container(
+              padding: const EdgeInsets.all(24.0),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -82,6 +78,148 @@ class CustomDrawer extends StatelessWidget {
                   ],
                 ),
               ),
+              child: Column(
+                children: [
+                  // Logo
+                  Center(
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.restaurant_menu,
+                        size: 35,
+                        color: const Color(0xFF689F38),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // App name
+                  Center(
+                    child: RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: 'Recipe',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w300,
+                              color: Colors.orange.shade100,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const TextSpan(
+                            text: 'Mate',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Menu items
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  _DrawerMenuItem(
+                    icon: Icons.home_outlined,
+                    title: 'Home',
+                    isSelected: currentRoute == '/home',
+                    onTap: () {
+                      Navigator.pop(context);
+                      if (currentRoute != '/home') {
+                        Navigator.pushReplacementNamed(context, '/home');
+                      }
+                    },
+                  ),
+
+                  _DrawerMenuItem(
+                    icon: Icons.kitchen_outlined,
+                    title: 'Pantry',
+                    isSelected: currentRoute == '/pantry',
+                    onTap: () {
+                      Navigator.pop(context);
+                      if (currentRoute != '/pantry') {
+                        Navigator.pushReplacementNamed(context, '/pantry');
+                      }
+                    },
+                  ),
+
+                  _DrawerMenuItem(
+                    icon: Icons.favorite_outline,
+                    title: 'Favorites',
+                    isSelected: currentRoute == '/favoris',
+                    onTap: () {
+                      Navigator.pop(context);
+                      if (currentRoute != '/favoris') {
+                        Navigator.pushReplacementNamed(context, '/favoris');
+                      }
+                    },
+                  ),
+
+                  _DrawerMenuItem(
+                    icon: Icons.person_outline,
+                    title: 'Profile',
+                    isSelected: currentRoute == '/profil',
+                    onTap: () {
+                      Navigator.pop(context);
+                      if (currentRoute != '/profil') {
+                        Navigator.pushReplacementNamed(context, '/profil');
+                      }
+                    },
+                  ),
+
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Divider(),
+                  ),
+                  // Logout button
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: _DrawerMenuItem(
+                      icon: Icons.logout,
+                      title: 'Logout',
+                      iconColor: Colors.red.shade400,
+                      textColor: Colors.red.shade700,
+                      onTap: () {
+                        Navigator.pop(context);
+                        _logout(context);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // User profile at the bottom
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                border: Border(
+                  top: BorderSide(color: Colors.grey.shade300),
+                ),
+              ),
               child: StreamBuilder<DocumentSnapshot>(
                 stream: user != null
                     ? FirebaseFirestore.instance
@@ -90,36 +228,27 @@ class CustomDrawer extends StatelessWidget {
                     .snapshots()
                     : null,
                 builder: (context, snapshot) {
-                  String username = 'Utilisateur';
+                  String username = 'User';
                   String email = user?.email ?? '';
                   String imageUrl = '';
 
                   if (snapshot.hasData && snapshot.data!.exists) {
                     final data = snapshot.data!.data() as Map<String, dynamic>;
-                    username = data['username'] ?? 'Utilisateur';
+                    username = data['username'] ?? 'User';
                     email = data['email'] ?? user?.email ?? '';
                     imageUrl = data['imageUrl'] ?? '';
                   }
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
+                  return Row(
                     children: [
-                      // Photo de profil
+                      // Profile image with welcome text
                       Container(
-                        width: 70,
-                        height: 70,
+                        width: 50,
+                        height: 50,
                         decoration: BoxDecoration(
-                          color: Colors.white,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          color: Colors.white,
+                          border: Border.all(color: Colors.grey.shade300, width: 2),
                         ),
                         child: ClipOval(
                           child: imageUrl.isNotEmpty
@@ -129,7 +258,7 @@ class CustomDrawer extends StatelessWidget {
                             errorBuilder: (context, error, stackTrace) {
                               return Icon(
                                 Icons.person,
-                                size: 40,
+                                size: 30,
                                 color: Colors.grey.shade400,
                               );
                             },
@@ -151,133 +280,57 @@ class CustomDrawer extends StatelessWidget {
                           )
                               : Icon(
                             Icons.person,
-                            size: 40,
+                            size: 30,
                             color: Colors.grey.shade400,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      // Nom d'utilisateur
-                      Text(
-                        username,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      // Email
-                      Text(
-                        email,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 13,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  );
-                },
-              child: StreamBuilder<DocumentSnapshot>(
-                stream: user != null
-                    ? FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(user.uid)
-                    .snapshots()
-                    : null,
-                builder: (context, snapshot) {
-                  String username = 'Utilisateur';
-                  String email = user?.email ?? '';
-                  String imageUrl = '';
+                      const SizedBox(width: 12),
 
-                  if (snapshot.hasData && snapshot.data!.exists) {
-                    final data = snapshot.data!.data() as Map<String, dynamic>;
-                    username = data['username'] ?? 'Utilisateur';
-                    email = data['email'] ?? user?.email ?? '';
-                    imageUrl = data['imageUrl'] ?? '';
-                  }
+                      // User info
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  'Welcome, ',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      // Photo de profil
-                      Container(
-                        width: 70,
-                        height: 70,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              username,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
-                        child: ClipOval(
-                          child: imageUrl.isNotEmpty
-                              ? Image.network(
-                            imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Icon(
-                                Icons.person,
-                                size: 40,
-                                color: Colors.grey.shade400,
-                              );
-                            },
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                      : null,
-                                  strokeWidth: 2,
-                                  valueColor: const AlwaysStoppedAnimation<Color>(
-                                    Color(0xFF8BC34A),
-                                  ),
-                                ),
-                              );
-                            },
-                          )
-                              : Icon(
-                            Icons.person,
-                            size: 40,
-                            color: Colors.grey.shade400,
-                          ),
-                        ),
                       ),
-                      const SizedBox(height: 12),
-                      // Nom d'utilisateur
-                      Text(
-                        username,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+
+                      // Profile button
+                      IconButton(
+                        icon: Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: Colors.grey.shade500,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      // Email
-                      Text(
-                        email,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 13,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.pushReplacementNamed(context, '/profil');
+                        },
+                        tooltip: 'Go to profile',
                       ),
                     ],
                   );
@@ -285,102 +338,7 @@ class CustomDrawer extends StatelessWidget {
               ),
             ),
 
-            // Menu items
-            _DrawerMenuItem(
-              icon: Icons.home_outlined,
-              title: 'Accueil',
-              isSelected: currentRoute == '/home',
-              onTap: () {
-                Navigator.pop(context);
-                if (currentRoute != '/home') {
-                  Navigator.pushReplacementNamed(context, '/home');
-                }
-              },
-            ),
 
-            _DrawerMenuItem(
-              icon: Icons.kitchen_outlined,
-              title: 'Pantry',
-              isSelected: currentRoute == '/pantry',
-              onTap: () {
-                Navigator.pop(context);
-                if (currentRoute != '/pantry') {
-                  Navigator.pushReplacementNamed(context, '/pantry');
-                }
-              },
-            ),
-
-            _DrawerMenuItem(
-              icon: Icons.favorite_outline,
-              title: 'Favoris',
-              isSelected: currentRoute == '/favoris',
-              onTap: () {
-                Navigator.pop(context);
-                if (currentRoute != '/favoris') {
-                  Navigator.pushReplacementNamed(context, '/favoris');
-                }
-              },
-            ),
-
-            _DrawerMenuItem(
-              icon: Icons.person_outline,
-              title: 'Profil',
-              isSelected: currentRoute == '/profil',
-              onTap: () {
-                Navigator.pop(context);
-                if (currentRoute != '/profil') {
-                  Navigator.pushReplacementNamed(context, '/profil');
-                }
-              },
-            ),
-
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Divider(),
-            ),
-
-            _DrawerMenuItem(
-              icon: Icons.settings_outlined,
-              title: 'Paramètres',
-              isSelected: currentRoute == '/parametres',
-              onTap: () {
-                Navigator.pop(context);
-                // Navigation vers les paramètres
-              },
-            ),
-
-            _DrawerMenuItem(
-              icon: Icons.help_outline,
-              title: 'Aide',
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-
-            _DrawerMenuItem(
-              icon: Icons.info_outline,
-              title: 'À propos',
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Divider(),
-            ),
-
-            // Logout button
-            _DrawerMenuItem(
-              icon: Icons.logout,
-              title: 'Déconnexion',
-              iconColor: Colors.red.shade400,
-              textColor: Colors.red.shade700,
-              onTap: () {
-                Navigator.pop(context);
-                _logout(context);
-              },
-            ),
           ],
         ),
       ),

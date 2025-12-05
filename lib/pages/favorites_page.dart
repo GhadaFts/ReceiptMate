@@ -34,15 +34,15 @@ class _FavoritesPageState extends State<FavoritesPage> {
     if (!FavoritesService.isUserLoggedIn) {
       setState(() {
         isLoading = false;
-        errorMessage = 'Connectez-vous pour voir vos favoris';
+        errorMessage = 'Log in to view your favorites';
       });
       return;
     }
 
-    // Essayer d'abord le chargement simple
+    // Try simple loading first
     _loadFavorites();
 
-    // Ensuite configurer le stream
+    // Then configure the stream
     try {
       _favoritesSubscription = FavoritesService.watchFavorites().listen(
             (favorites) {
@@ -58,7 +58,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
           print('Error in favorites stream: $error');
           if (mounted) {
             setState(() {
-              errorMessage = 'Chargement en mode simple';
+              errorMessage = 'Loading in simple mode';
             });
           }
         },
@@ -73,7 +73,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
       setState(() {
         isLoading = false;
         favoriteRecipes = [];
-        errorMessage = 'Connectez-vous pour voir vos favoris';
+        errorMessage = 'Log in to view your favorites';
       });
       return;
     }
@@ -96,7 +96,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
       if (mounted) {
         setState(() {
           isLoading = false;
-          errorMessage = 'Erreur de chargement des favoris';
+          errorMessage = 'Error loading favorites';
         });
       }
     }
@@ -105,16 +105,16 @@ class _FavoritesPageState extends State<FavoritesPage> {
   Future<void> _removeFavorite(Recipe recipe) async {
     try {
       await FavoritesService.removeFavorite(recipe.id!);
-      // Recharger après suppression
+      // Reload after removal
       _loadFavorites();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${recipe.name} retiré des favoris'),
+            content: Text('${recipe.name} removed from favorites'),
             duration: const Duration(seconds: 2),
             action: SnackBarAction(
-              label: 'Annuler',
+              label: 'Undo',
               onPressed: () async {
                 await FavoritesService.addFavorite(recipe);
                 _loadFavorites();
@@ -127,7 +127,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: ${e.toString()}'),
+            content: Text('Error: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -139,21 +139,21 @@ class _FavoritesPageState extends State<FavoritesPage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Supprimer tous les favoris ?'),
+        title: const Text('Delete all favorites?'),
         content: const Text(
-          'Êtes-vous sûr de vouloir supprimer tous vos favoris ? Cette action est irréversible.',
+          'Are you sure you want to delete all your favorites? This action is irreversible.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
             ),
-            child: const Text('Supprimer tout'),
+            child: const Text('Delete all'),
           ),
         ],
       ),
@@ -166,8 +166,8 @@ class _FavoritesPageState extends State<FavoritesPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Tous les favoris ont été supprimés'),
-              duration: const Duration(seconds: 2),
+              content: Text('All favorites have been deleted'),
+              duration: Duration(seconds: 2),
             ),
           );
         }
@@ -175,7 +175,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Erreur: ${e.toString()}'),
+              content: Text('Error: ${e.toString()}'),
               backgroundColor: Colors.red,
             ),
           );
@@ -189,7 +189,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Mes Favoris'),
+        title: const Text('My Favorites'),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
@@ -198,7 +198,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
             IconButton(
               icon: const Icon(Icons.delete_sweep, color: Colors.black),
               onPressed: _clearAllFavorites,
-              tooltip: 'Supprimer tous les favoris',
+              tooltip: 'Delete all favorites',
             ),
         ],
       ),
@@ -237,7 +237,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
               ),
               const SizedBox(height: 32),
               Text(
-                'Aucun favori',
+                'No favorites yet',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -246,7 +246,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Commencez à ajouter des recettes à vos favoris en appuyant sur le cœur ❤️',
+                'Start adding recipes to your favorites by tapping the heart ❤️',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
@@ -260,7 +260,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                   Navigator.pushReplacementNamed(context, '/home');
                 },
                 icon: const Icon(Icons.explore),
-                label: const Text('Explorer les recettes'),
+                label: const Text('Explore recipes'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green.shade600,
                   foregroundColor: Colors.white,
@@ -283,7 +283,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
   Widget _buildFavoritesList() {
     return Column(
       children: [
-        // Header avec compteur
+        // Header with counter
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -318,7 +318,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Mes Favoris',
+                      'My Favorites',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -326,7 +326,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       ),
                     ),
                     Text(
-                      '${favoriteRecipes.length} recette${favoriteRecipes.length > 1 ? 's' : ''} sauvegardée${favoriteRecipes.length > 1 ? 's' : ''}',
+                      '${favoriteRecipes.length} recipe${favoriteRecipes.length > 1 ? 's' : ''} saved',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.white.withOpacity(0.9),
@@ -339,7 +339,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
           ),
         ),
 
-        // Message d'erreur
+        // Error message
         if (errorMessage != null)
           Container(
             padding: const EdgeInsets.all(16),
@@ -365,7 +365,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
             ),
           ),
 
-        // Liste des favoris
+        // Favorites list
         Expanded(
           child: GridView.builder(
             padding: const EdgeInsets.all(20),
@@ -383,7 +383,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                   RecipeCard(
                     recipe: recipe,
                     width: double.infinity,
-                    showFavoriteButton: false, // IMPORTANT: Désactive le cœur interne
+                    showFavoriteButton: false, // IMPORTANT: Disable internal heart
                   ),
                   Positioned(
                     top: 8,

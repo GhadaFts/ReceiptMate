@@ -117,7 +117,6 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
     }
   }
 
-  // MÉTHODE CORRIGÉE POUR YOUTUBE
   Future<void> _launchYouTube(String url) async {
     try {
       print('Tentative de lancement YouTube: $url');
@@ -131,18 +130,18 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
       final uri = Uri.parse(url);
 
       if (await canLaunchUrl(uri)) {
-        print('✅ URL YouTube valide, lancement...');
+        print(' URL YouTube valide, lancement...');
         await launchUrl(
           uri,
           mode: LaunchMode.externalApplication,
         );
-        print('✅ YouTube lancé avec succès');
+        print('YouTube lancé avec succès');
       } else {
-        print('❌ Impossible de lancer l URL YouTube');
+        print(' Impossible de lancer l URL YouTube');
         _showNoYouTubeDialog();
       }
     } catch (e) {
-      print('❌ Erreur lors du lancement YouTube: $e');
+      print(' Erreur lors du lancement YouTube: $e');
       _showNoYouTubeDialog();
     }
   }

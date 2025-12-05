@@ -24,9 +24,9 @@ class _SignUpPageState extends State<SignUpPage> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
-  // Pour stocker l'image (compatible web et mobile)
+  // For storing image (compatible web and mobile)
   XFile? _imageFile;
-  Uint8List? _imageBytes; // Pour l'affichage sur le web
+  Uint8List? _imageBytes; // For web display
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -48,7 +48,7 @@ class _SignUpPageState extends State<SignUpPage> {
       );
 
       if (pickedFile != null) {
-        // Lire les bytes pour l'affichage
+        // Read bytes for display
         final bytes = await pickedFile.readAsBytes();
 
         setState(() {
@@ -56,16 +56,16 @@ class _SignUpPageState extends State<SignUpPage> {
           _imageBytes = bytes;
         });
 
-        print('✅ Image sélectionnée : ${pickedFile.name}');
+        print('✅ Image selected: ${pickedFile.name}');
       } else {
-        print('❌ Aucune image sélectionnée');
+        print('❌ No image selected');
       }
     } catch (e) {
-      print('❌ Erreur lors de la sélection : $e');
+      print('❌ Error during selection: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors de la sélection de l\'image'),
+            content: Text('Error selecting image'),
             backgroundColor: Colors.red,
           ),
         );
@@ -75,17 +75,17 @@ class _SignUpPageState extends State<SignUpPage> {
 
   Future<String?> _uploadImage() async {
     if (_imageFile == null) {
-      print('⚠️ Aucune image à uploader');
+      print('⚠️ No image to upload');
       return null;
     }
 
-    // Vérifier que la clé API est configurée
+    // Check if API key is configured
     if (!ImgBBService.isConfigured()) {
-      print('❌ Clé API ImgBB non configurée !');
+      print('❌ ImgBB API key not configured!');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Clé API ImgBB non configurée'),
+            content: Text('ImgBB API key not configured'),
             backgroundColor: Colors.red,
           ),
         );
@@ -94,20 +94,20 @@ class _SignUpPageState extends State<SignUpPage> {
     }
 
     try {
-      print('📤 Upload vers ImgBB...');
+      print('📤 Uploading to ImgBB...');
 
-      // Upload vers ImgBB (fonctionne sur web et mobile)
+      // Upload to ImgBB (works on web and mobile)
       final imageUrl = await ImgBBService.uploadImage(_imageFile!);
 
       if (imageUrl != null) {
-        print('✅ Image uploadée : $imageUrl');
+        print('✅ Image uploaded: $imageUrl');
         return imageUrl;
       } else {
-        print('❌ Échec de l\'upload');
+        print('❌ Upload failed');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Échec de l\'upload de l\'image'),
+              content: Text('Failed to upload image'),
               backgroundColor: Colors.red,
             ),
           );
@@ -115,11 +115,11 @@ class _SignUpPageState extends State<SignUpPage> {
         return null;
       }
     } catch (e) {
-      print('❌ Erreur upload : $e');
+      print('❌ Upload error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur : $e'),
+            content: Text('Error: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -134,34 +134,34 @@ class _SignUpPageState extends State<SignUpPage> {
     setState(() => _isLoading = true);
 
     try {
-      print('🔐 Création du compte...');
+      print('🔐 Creating account...');
 
-      // Créer le compte Firebase
+      // Create Firebase account
       final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
-      print('✅ Compte créé : ${userCredential.user!.uid}');
+      print('✅ Account created: ${userCredential.user!.uid}');
 
-      // Upload l'image si sélectionnée
+      // Upload image if selected
       String? imageUrl;
       if (_imageFile != null) {
-        print('📸 Image détectée, upload en cours...');
+        print('📸 Image detected, uploading...');
         imageUrl = await _uploadImage();
 
         if (imageUrl != null) {
-          print('✅ URL de l\'image obtenue : $imageUrl');
+          print('✅ Image URL obtained: $imageUrl');
         } else {
-          print('⚠️ Pas d\'URL d\'image (upload échoué ou ignoré)');
+          print('⚠️ No image URL (upload failed or skipped)');
         }
       } else {
-        print('⚠️ Aucune image sélectionnée');
+        print('⚠️ No image selected');
       }
 
-      print('💾 Sauvegarde dans Firestore...');
+      print('💾 Saving to Firestore...');
 
-      // Sauvegarder dans Firestore
+      // Save to Firestore
       await FirebaseFirestore.instance
           .collection('users')
           .doc(userCredential.user!.uid)
@@ -173,22 +173,22 @@ class _SignUpPageState extends State<SignUpPage> {
         'onboardingCompleted': false,
       });
 
-      print('✅ Données sauvegardées');
+      print('✅ Data saved');
 
-      // Mettre à jour le profil Firebase Auth
+      // Update Firebase Auth profile
       await userCredential.user!.updateDisplayName(_usernameController.text.trim());
       if (imageUrl != null) {
         await userCredential.user!.updatePhotoURL(imageUrl);
       }
 
-      print('✅ Profil Firebase Auth mis à jour');
+      print('✅ Firebase Auth profile updated');
 
       if (mounted) {
-        print('🎉 Inscription réussie, redirection...');
+        print('🎉 Registration successful, redirecting...');
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Compte créé avec succès !'),
+            content: Text('Account created successfully!'),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 2),
           ),
@@ -197,15 +197,15 @@ class _SignUpPageState extends State<SignUpPage> {
         Navigator.of(context).pushReplacementNamed('/onboarding');
       }
     } on FirebaseAuthException catch (e) {
-      print('❌ Erreur Firebase Auth : ${e.code} - ${e.message}');
-      String message = 'Une erreur est survenue';
+      print('❌ Firebase Auth error: ${e.code} - ${e.message}');
+      String message = 'An error occurred';
 
       if (e.code == 'weak-password') {
-        message = 'Le mot de passe est trop faible';
+        message = 'Password is too weak';
       } else if (e.code == 'email-already-in-use') {
-        message = 'Un compte existe déjà pour cet email';
+        message = 'An account already exists for this email';
       } else if (e.code == 'invalid-email') {
-        message = 'Adresse email invalide';
+        message = 'Invalid email address';
       }
 
       if (mounted) {
@@ -217,11 +217,11 @@ class _SignUpPageState extends State<SignUpPage> {
         );
       }
     } catch (e) {
-      print('❌ Erreur inattendue : $e');
+      print('❌ Unexpected error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur : $e'),
+            content: Text('Error: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -254,7 +254,7 @@ class _SignUpPageState extends State<SignUpPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Text(
-                  'Créer un compte',
+                  'Create an Account',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -263,7 +263,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Inscrivez-vous pour commencer',
+                  'Sign up to get started',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey.shade600,
@@ -271,7 +271,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 const SizedBox(height: 32),
 
-                // Image de profil
+                // Profile Picture
                 Center(
                   child: Stack(
                     children: [
@@ -322,7 +322,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 const SizedBox(height: 8),
                 Center(
                   child: Text(
-                    'Optionnel',
+                    'Optional',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey.shade500,
@@ -331,11 +331,11 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 const SizedBox(height: 32),
 
-                // Champ Username
+                // Username Field
                 TextFormField(
                   controller: _usernameController,
                   decoration: InputDecoration(
-                    labelText: 'Nom d\'utilisateur',
+                    labelText: 'Username',
                     prefixIcon: const Icon(Icons.person_outline),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -351,17 +351,17 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Entrez un nom d\'utilisateur';
+                      return 'Please enter a username';
                     }
                     if (value.length < 3) {
-                      return 'Minimum 3 caractères';
+                      return 'Minimum 3 characters';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
 
-                // Champ Email
+                // Email Field
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -382,22 +382,22 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Entrez votre email';
+                      return 'Please enter your email';
                     }
                     if (!value.contains('@')) {
-                      return 'Email invalide';
+                      return 'Invalid email';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
 
-                // Champ Mot de passe
+                // Password Field
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
-                    labelText: 'Mot de passe',
+                    labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -421,22 +421,22 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Entrez un mot de passe';
+                      return 'Please enter a password';
                     }
                     if (value.length < 6) {
-                      return 'Minimum 6 caractères';
+                      return 'Minimum 6 characters';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
 
-                // Champ Confirmer mot de passe
+                // Confirm Password Field
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
                   decoration: InputDecoration(
-                    labelText: 'Confirmer mot de passe',
+                    labelText: 'Confirm Password',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -460,17 +460,17 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Confirmez votre mot de passe';
+                      return 'Please confirm your password';
                     }
                     if (value != _passwordController.text) {
-                      return 'Les mots de passe ne correspondent pas';
+                      return 'Passwords do not match';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 32),
 
-                // Bouton S'inscrire
+                // Sign Up Button
                 SizedBox(
                   height: 56,
                   child: ElevatedButton(
@@ -493,7 +493,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       ),
                     )
                         : const Text(
-                      'S\'inscrire',
+                      'Sign Up',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -503,12 +503,12 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 const SizedBox(height: 24),
 
-                // Lien Connexion
+                // Login Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Déjà un compte ? ',
+                      'Already have an account? ',
                       style: TextStyle(
                         color: Colors.grey.shade600,
                         fontSize: 15,
@@ -519,7 +519,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         Navigator.pop(context);
                       },
                       child: Text(
-                        'Se connecter',
+                        'Log In',
                         style: TextStyle(
                           color: Colors.orange.shade400,
                           fontSize: 15,

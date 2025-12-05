@@ -36,7 +36,7 @@ class _HomePageState extends State<HomePage> {
   Map<String, dynamic>? userData;
   List<Map<String, dynamic>> pantryItems = [];
 
-  //Loading User Data
+  // Loading User Data
   @override
   void initState() {
     super.initState();
@@ -46,7 +46,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadUserData() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;// Not logged in
+    if (user == null) return; // Not logged in
 
     try {
       // Step 1: Load user profile from Firestore
@@ -137,7 +137,7 @@ class _HomePageState extends State<HomePage> {
     ]);
   }
 
-  //Loading Regular Recipes
+  // Loading Regular Recipes
   Future<void> _loadCategoryRecipes() async {
     setState(() {
       isLoadingCategory = true;
@@ -222,6 +222,7 @@ class _HomePageState extends State<HomePage> {
     });
     _loadCategoryRecipes();
   }
+
   // AI Toggle Button
   void _toggleAI() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -248,6 +249,7 @@ class _HomePageState extends State<HomePage> {
       }
     }
   }
+
   // Building the UI
   @override
   Widget build(BuildContext context) {
@@ -306,6 +308,61 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Logo and App Name
+                Row(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.restaurant_menu,
+                        size: 25,
+                        color: Colors.orange.shade400,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: 'Receipe',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w300,
+                              color: Colors.green.shade400,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          const TextSpan(
+                            text: 'Mate',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Healthy and nutritious food recipes',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.orange.shade400,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
                 // AI Toggle Button
                 GestureDetector(
                   onTap: _toggleAI,
@@ -316,12 +373,16 @@ class _HomePageState extends State<HomePage> {
                     decoration: BoxDecoration(
                       gradient: isAIEnabled
                           ? LinearGradient(
-                        colors: [Colors.purple.shade400, Colors.blue.shade400],
+                        colors: [
+                          Colors.purple.shade400,
+                          Colors.blue.shade400
+                        ],
                       )
                           : null,
                       color: isAIEnabled ? null : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(16),
-                      border: isAIEnabled ? null : Border.all(color: Colors.grey.shade300),
+                      border:
+                      isAIEnabled ? null : Border.all(color: Colors.grey.shade300),
                       boxShadow: isAIEnabled
                           ? [
                         BoxShadow(
@@ -387,26 +448,6 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-
-                // Titre
-                const Text(
-                  'Healthy Salads',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Healthy and nutritious food recipes',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.orange.shade400,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 24),
 
                 // Catégories
                 SizedBox(
@@ -511,7 +552,11 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         IconButton(
-                          icon: Icon(Icons.close, color: Colors.orange.shade700, size: 20),
+                          icon: Icon(
+                            Icons.close,
+                            color: Colors.orange.shade700,
+                            size: 20,
+                          ),
                           onPressed: () {
                             setState(() {
                               selectedAllergies.clear();
@@ -823,7 +868,8 @@ class _AIRecipeCardState extends State<AIRecipeCard> {
     if (widget.recommendation.recipe.id == null) return;
 
     try {
-      final isFav = await FavoritesService.isFavorite(widget.recommendation.recipe.id!);
+      final isFav =
+      await FavoritesService.isFavorite(widget.recommendation.recipe.id!);
       if (mounted) {
         setState(() {
           _isFavorite = isFav;
@@ -857,7 +903,8 @@ class _AIRecipeCardState extends State<AIRecipeCard> {
     });
 
     try {
-      final success = await FavoritesService.toggleFavorite(widget.recommendation.recipe);
+      final success =
+      await FavoritesService.toggleFavorite(widget.recommendation.recipe);
 
       if (mounted) {
         setState(() {
@@ -869,9 +916,8 @@ class _AIRecipeCardState extends State<AIRecipeCard> {
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_isFavorite
-                ? 'Ajouté aux favoris !'
-                : 'Retiré des favoris'),
+            content: Text(
+                _isFavorite ? 'Ajouté aux favoris !' : 'Retiré des favoris'),
             backgroundColor: _isFavorite ? Colors.green : Colors.orange,
             duration: const Duration(seconds: 2),
           ),
@@ -932,7 +978,8 @@ class _AIRecipeCardState extends State<AIRecipeCard> {
                   height: 140,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                    borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(16)),
                     image: DecorationImage(
                       image: NetworkImage(widget.recommendation.recipe.imageUrl),
                       fit: BoxFit.cover,
@@ -944,7 +991,8 @@ class _AIRecipeCardState extends State<AIRecipeCard> {
                   top: 8,
                   right: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: widget.recommendation.scoreColor,
                       borderRadius: BorderRadius.circular(20),
@@ -998,8 +1046,11 @@ class _AIRecipeCardState extends State<AIRecipeCard> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                           : Icon(
-                        _isFavorite ? Icons.favorite : Icons.favorite_border,
-                        color: _isFavorite ? Colors.red : Colors.grey.shade600,
+                        _isFavorite
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color:
+                        _isFavorite ? Colors.red : Colors.grey.shade600,
                         size: 18,
                       ),
                     ),
@@ -1049,7 +1100,8 @@ class _AIRecipeCardState extends State<AIRecipeCard> {
                     const SizedBox(height: 8),
                     // Calories
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.green.shade50,
                         borderRadius: BorderRadius.circular(8),

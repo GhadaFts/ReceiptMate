@@ -101,7 +101,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
             BottomNavigationBarItem(
               icon: Icon(Icons.favorite_outline),
               activeIcon: Icon(Icons.favorite),
-              label: 'Favoris',
+              label: 'Favorites',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
